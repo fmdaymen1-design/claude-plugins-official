@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Printgoed – Jouw ontwerp, op alles geprint</title>
+  <meta name="description" content="Printgoed: print-on-demand kleding, accessoires en woonproducten met jouw eigen ontwerp. Geen minimale afname, snel geleverd.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="topbar">Gratis verzending vanaf €50 · Geen minimale afname · Binnen 3–5 werkdagen in huis</div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="#" class="logo" aria-label="Printgoed home"><span class="logo-mark">P</span>printgoed</a>
+      <nav class="nav" id="nav">
+        <a href="#shop">Shop</a>
+        <a href="#categorieen">Categorieën</a>
+        <a href="#hoe-werkt-het">Hoe werkt het</a>
+        <a href="#zakelijk">Zakelijk</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="cartBtn" aria-label="Winkelwagen openen">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 2H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">Print on demand</span>
+          <h1>Jouw ontwerp.<br><span class="hl">Op alles</span> geprint.</h1>
+          <p>Upload je logo, foto of tekst en wij printen het op kleding, mokken, posters en meer. Vanaf 1 stuk, zonder voorraad en zonder gedoe.</p>
+          <div class="hero-cta">
+            <a href="#shop" class="btn btn-primary">Start met ontwerpen</a>
+            <a href="#hoe-werkt-het" class="btn btn-ghost">Hoe werkt het?</a>
+          </div>
+          <ul class="usp-inline">
+            <li>✔ Vanaf 1 stuk</li>
+            <li>✔ Duurzame materialen</li>
+            <li>✔ Veilig betalen met iDEAL</li>
+          </ul>
+        </div>
+        <div class="hero-visual" id="heroVisual" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="usps">
+      <div class="container usp-grid">
+        <div class="usp"><strong>Geen minimum</strong><span>Bestel 1 of 1.000 stuks</span></div>
+        <div class="usp"><strong>Snel geleverd</strong><span>Productie in 2–3 werkdagen</span></div>
+        <div class="usp"><strong>Live preview</strong><span>Zie direct hoe het wordt</span></div>
+        <div class="usp"><strong>Kwaliteitsgarantie</strong><span>Niet goed? Gratis opnieuw</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="categorieen">
+      <div class="container">
+        <div class="section-head">
+          <h2>Shop per categorie</h2>
+          <p>Kies een product en maak het helemaal van jou.</p>
+        </div>
+        <div class="cat-grid" id="catGrid"></div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="shop">
+      <div class="container">
+        <div class="section-head">
+          <h2>Alle producten</h2>
+          <p>Klik op een product om je eigen ontwerp toe te voegen.</p>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="filters" role="tablist"></div>
+          <div class="toolbar-right">
+            <input type="search" id="search" placeholder="Zoek product…" aria-label="Zoek product">
+            <select id="sort" aria-label="Sorteren">
+              <option value="popular">Populair</option>
+              <option value="price-asc">Prijs laag–hoog</option>
+              <option value="price-desc">Prijs hoog–laag</option>
+              <option value="name">Naam A–Z</option>
+            </select>
+          </div>
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+        <p class="empty" id="emptyState" hidden>Geen producten gevonden.</p>
+      </div>
+    </section>
+
+    <section class="section" id="hoe-werkt-het">
+      <div class="container">
+        <div class="section-head">
+          <h2>Zo werkt het</h2>
+          <p>In drie stappen van idee naar product.</p>
+        </div>
+        <ol class="steps">
+          <li><span class="step-num">1</span><h3>Kies je product</h3><p>Van T-shirt tot telefoonhoesje: kies het product, de kleur en de maat.</p></li>
+          <li><span class="step-num">2</span><h3>Upload je ontwerp</h3><p>Upload een afbeelding of typ je tekst en bekijk direct de live preview.</p></li>
+          <li><span class="step-num">3</span><h3>Wij printen &amp; leveren</h3><p>We printen je bestelling op aanvraag en versturen hem binnen enkele dagen.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section business" id="zakelijk">
+      <div class="container business-inner">
+        <div>
+          <span class="eyebrow light">Zakelijk</span>
+          <h2>Merchandise voor je bedrijf, club of event</h2>
+          <p>Bedrijfskleding, teamshirts of relatiegeschenken? Bij grotere aantallen krijg je staffelkorting en een vast aanspreekpunt.</p>
+          <ul class="checklist">
+            <li>Staffelkorting vanaf 25 stuks</li>
+            <li>Gratis ontwerpcheck door ons team</li>
+            <li>Op factuur betalen</li>
+          </ul>
+          <a href="#contact" class="btn btn-light">Offerte aanvragen</a>
+        </div>
+        <div class="tiers">
+          <div class="tier"><span>25+ stuks</span><strong>10% korting</strong></div>
+          <div class="tier"><span>50+ stuks</span><strong>15% korting</strong></div>
+          <div class="tier"><span>100+ stuks</span><strong>20% korting</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="container narrow">
+        <div class="section-head">
+          <h2>Veelgestelde vragen</h2>
+        </div>
+        <div class="faq">
+          <details><summary>Wat is print on demand?</summary><p>Elk product wordt pas geprint nadat je het bestelt. Daardoor kun je al vanaf 1 stuk bestellen en is er geen verspilling door overproductie.</p></details>
+          <details><summary>Welke bestanden kan ik uploaden?</summary><p>PNG, JPG en SVG. Voor het beste resultaat gebruik je een PNG met transparante achtergrond van minimaal 2000 px breed (300 dpi).</p></details>
+          <details><summary>Hoe lang duurt de levering?</summary><p>Productie duurt 2–3 werkdagen. Daarna bezorgen we binnen 1–2 werkdagen in Nederland en België.</p></details>
+          <details><summary>Kan ik mijn bestelling retourneren?</summary><p>Omdat producten persoonlijk gemaakt worden, zijn ze uitgesloten van het herroepingsrecht. Is er een drukfout of beschadiging? Dan maken we het gratis opnieuw.</p></details>
+          <details><summary>Hoe kan ik betalen?</summary><p>Met iDEAL, Bancontact, creditcard, PayPal of (zakelijk) op factuur.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section newsletter">
+      <div class="container narrow center">
+        <h2>10% korting op je eerste bestelling</h2>
+        <p>Schrijf je in voor de nieuwsbrief en ontvang inspiratie, acties en je kortingscode.</p>
+        <form class="newsletter-form" id="newsletterForm">
+          <input type="email" required placeholder="jouw@email.nl" aria-label="E-mailadres">
+          <button class="btn btn-primary" type="submit">Inschrijven</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="contact">
+    <div class="container footer-grid">
+      <div>
+        <a href="#" class="logo logo-light"><span class="logo-mark">P</span>printgoed</a>
+        <p>Print-on-demand producten met jouw eigen ontwerp. Gemaakt op aanvraag, zonder verspilling.</p>
+      </div>
+      <div>
+        <h4>Shop</h4>
+        <a href="#shop">Alle producten</a>
+        <a href="#categorieen">Categorieën</a>
+        <a href="#zakelijk">Zakelijk</a>
+      </div>
+      <div>
+        <h4>Service</h4>
+        <a href="#faq">Veelgestelde vragen</a>
+        <a href="#faq">Verzenden &amp; retour</a>
+        <a href="#">Algemene voorwaarden</a>
+        <a href="#">Privacybeleid</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="mailto:info@printgoed.com">info@printgoed.com</a>
+        <span>Ma–vr 9:00–17:00</span>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© <span id="year"></span> Printgoed</span>
+      <span class="pay">iDEAL · Bancontact · PayPal · Visa · Mastercard</span>
+    </div>
+  </footer>
+
+  <!-- Productconfigurator -->
+  <div class="modal" id="productModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+      <button class="modal-close" data-close aria-label="Sluiten">×</button>
+      <div class="pm-grid">
+        <div class="pm-preview" id="pmPreview"></div>
+        <div class="pm-info">
+          <h3 id="pmTitle"></h3>
+          <p class="pm-price" id="pmPrice"></p>
+          <p class="pm-desc" id="pmDesc"></p>
+
+          <div class="field">
+            <label>Kleur</label>
+            <div class="swatches" id="pmColors"></div>
+          </div>
+          <div class="field">
+            <label for="pmSize">Maat / variant</label>
+            <select id="pmSize"></select>
+          </div>
+
+          <div class="field">
+            <label>Jouw ontwerp</label>
+            <div class="design-tabs">
+              <button class="tab active" data-tab="upload" type="button">Afbeelding uploaden</button>
+              <button class="tab" data-tab="text" type="button">Tekst</button>
+            </div>
+            <div class="tab-panel" data-panel="upload">
+              <label class="upload" for="pmUpload">
+                <input type="file" id="pmUpload" accept="image/png,image/jpeg,image/svg+xml">
+                <span id="pmUploadLabel">Klik om een PNG, JPG of SVG te kiezen</span>
+              </label>
+            </div>
+            <div class="tab-panel" data-panel="text" hidden>
+              <textarea id="pmText" rows="2" maxlength="60" placeholder="Typ je tekst (max. 3 regels)"></textarea>
+              <div class="text-opts">
+                <select id="pmFont" aria-label="Lettertype">
+                  <option value="Archivo, sans-serif">Stoer</option>
+                  <option value="Georgia, serif">Klassiek</option>
+                  <option value="'Courier New', monospace">Typemachine</option>
+                  <option value="'Brush Script MT', cursive">Handschrift</option>
+                </select>
+                <input type="color" id="pmTextColor" value="#111111" aria-label="Tekstkleur">
+              </div>
+            </div>
+          </div>
+
+          <div class="pm-buy">
+            <div class="qty">
+              <button type="button" id="qtyMinus" aria-label="Minder">−</button>
+              <input type="number" id="pmQty" value="1" min="1" max="999" aria-label="Aantal">
+              <button type="button" id="qtyPlus" aria-label="Meer">+</button>
+            </div>
+            <button class="btn btn-primary grow" id="pmAdd">In winkelwagen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winkelwagen -->
+  <div class="drawer" id="cartDrawer" hidden>
+    <div class="modal-backdrop" data-close-cart></div>
+    <aside class="drawer-panel" aria-label="Winkelwagen">
+      <div class="drawer-head">
+        <h3>Winkelwagen</h3>
+        <button class="modal-close static" data-close-cart aria-label="Sluiten">×</button>
+      </div>
+      <div class="ship-bar"><div class="ship-text" id="shipText"></div><div class="ship-track"><div class="ship-fill" id="shipFill"></div></div></div>
+      <div class="cart-items" id="cartItems"></div>
+      <div class="drawer-foot">
+        <div class="row"><span>Subtotaal</span><span id="cartSubtotal">€0,00</span></div>
+        <div class="row"><span>Verzending</span><span id="cartShipping">€0,00</span></div>
+        <div class="row total"><span>Totaal</span><span id="cartTotal">€0,00</span></div>
+        <button class="btn btn-primary full" id="checkoutBtn">Afrekenen</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Afrekenen -->
+  <div class="modal" id="checkoutModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel small" role="dialog" aria-modal="true" aria-labelledby="coTitle">
+      <button class="modal-close" data-close aria-label="Sluiten">×</button>
+      <h3 id="coTitle">Afrekenen</h3>
+      <form id="checkoutForm" class="checkout-form">
+        <div class="two"><input required placeholder="Voornaam" autocomplete="given-name"><input required placeholder="Achternaam" autocomplete="family-name"></div>
+        <input required type="email" placeholder="E-mailadres" autocomplete="email">
+        <input required placeholder="Straat en huisnummer" autocomplete="street-address">
+        <div class="two"><input required placeholder="Postcode" autocomplete="postal-code"><input required placeholder="Plaats" autocomplete="address-level2"></div>
+        <select required aria-label="Land"><option>Nederland</option><option>België</option><option>Duitsland</option></select>
+        <fieldset class="pay-methods">
+          <legend>Betaalmethode</legend>
+          <label><input type="radio" name="pay" checked> iDEAL</label>
+          <label><input type="radio" name="pay"> Bancontact</label>
+          <label><input type="radio" name="pay"> Creditcard</label>
+          <label><input type="radio" name="pay"> PayPal</label>
+        </fieldset>
+        <p class="co-total">Te betalen: <strong id="coTotal"></strong></p>
+        <button class="btn btn-primary full" type="submit">Bestelling plaatsen</button>
+        <p class="note">Demo-afrekenpagina: koppel hier je betaalprovider (bijv. Mollie of Stripe).</p>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/products.js"></script>
+  <script src="js/mockups.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
