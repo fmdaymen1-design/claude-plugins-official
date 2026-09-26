@@ -1,367 +1,313 @@
 (function () {
-  const PRODUCTS = window.PG_PRODUCTS;
-  const CATEGORIES = window.PG_CATEGORIES;
-  const FREE_SHIPPING = 50;
-  const SHIPPING_COST = 4.95;
-  const CART_KEY = "printgoed-cart";
+  const CFG = window.PG_CONFIG;
+  const I18N = window.PG_I18N;
+  const PRODUCTS = window.PG_PRODUCTS || [];
+  const REVIEWS = window.PG_REVIEWS || [];
+  const CATEGORIES = ["tshirts", "hoodies", "ornaments", "home", "accessories", "digital"];
+  const THEMES = ["halloween", "christmas", "family", "pets", "sports", "funny"];
+  const LANG_KEY = "printgoed-lang";
+  const SHOP_URL = `https://www.etsy.com/shop/${CFG.etsyShop}`;
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-  const euro = (n) => "€" + n.toFixed(2).replace(".", ",");
+  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
   const byId = (id) => PRODUCTS.find((p) => p.id === id);
 
-  // ---------- Opslag ----------
-  function loadCart() {
-    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { return []; }
+  // ---------- Taal ----------
+  function detectLang() {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved && I18N[saved]) return saved;
+    } catch (e) { /* opslag niet beschikbaar */ }
+    const nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return I18N[nav] ? nav : "en";
   }
-  function saveCart() {
-    try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
-    catch (e) { toast("Let op: winkelwagen kon niet lokaal worden opgeslagen."); }
-  }
-  let cart = loadCart();
+  let lang = detectLang();
 
-  function toast(msg) {
-    const t = $("#toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => t.classList.remove("show"), 2600);
-  }
-
-  function unitPrice(product, size) {
-    return product.price + ((product.sizePrices && product.sizePrices[size]) || 0);
+  function t(key, vars) {
+    let s = (I18N[lang] && I18N[lang][key]) ?? I18N.en[key] ?? key;
+    if (vars) Object.keys(vars).forEach((k) => (s = s.replace(`{${k}}`, vars[k])));
+    return s;
   }
 
-  // ---------- Hero ----------
+  function money(n) {
+    return new Intl.NumberFormat(lang, { style: "currency", currency: CFG.currency }).format(n);
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = lang;
+    $$("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
+    $$("[data-i18n-placeholder]").forEach((el) => (el.placeholder = t(el.dataset.i18nPlaceholder)));
+    $$("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    $("#promo").textContent = CFG.promoCode ? t("promo", { code: CFG.promoCode }) : "";
+    $$(".lang-select").forEach((sel) => (sel.value = lang));
+  }
+
+  function setLang(next) {
+    lang = next;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* opslag niet beschikbaar */ }
+    renderAll();
+  }
+
+  // ---------- Afbeeldingen ----------
+  // Etsy levert meerdere formaten; kleinere varianten laden veel sneller.
+  const sized = (url, size) => url.replace("il_fullxfull.", `il_${size}.`);
+  function img(url, size, alt, cls = "") {
+    return `<img class="${cls}" src="${esc(sized(url, size))}" data-full="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
+  }
+  // Val terug op het originele formaat als een verkleinde variant niet bestaat
+  document.addEventListener("error", (e) => {
+    const el = e.target;
+    if (el.tagName === "IMG" && el.dataset.full && el.src !== el.dataset.full) el.src = el.dataset.full;
+  }, true);
+
+  function etsyUrl(p) {
+    if (p.u) return p.u;
+    const q = p.t.split(/[,|:–]| - /)[0].trim().split(/\s+/).slice(0, 8).join(" ");
+    return `${SHOP_URL}?search_query=${encodeURIComponent(q)}`;
+  }
+
+  // ---------- Hero, statistieken ----------
+  function avgRating() {
+    if (!REVIEWS.length) return 0;
+    return REVIEWS.reduce((s, r) => s + r.r, 0) / REVIEWS.length;
+  }
+
   function renderHero() {
-    const picks = [["tshirt", "#ff5a36"], ["mug", "#ffffff"], ["hoodie", "#111111"], ["tote", "#e8e0d5"]];
+    const picks = ["tshirts", "ornaments", "hoodies", "home"]
+      .map((c) => PRODUCTS.find((p) => p.c === c))
+      .filter(Boolean);
     $("#heroVisual").innerHTML = picks
-      .map(([type, color], i) => `<div class="hero-card c${i}">${pgMockup(type, color)}</div>`)
+      .map((p, i) => `<button class="hero-card c${i}" data-id="${p.id}" aria-label="${esc(p.t)}">${img(p.img[0], "570xN", p.t)}</button>`)
       .join("");
+    $$("#heroVisual .hero-card").forEach((el) => el.addEventListener("click", () => openProduct(el.dataset.id)));
+    $("#statProducts").textContent = PRODUCTS.length ? PRODUCTS.length + "+" : "–";
+    $("#statRating").textContent = REVIEWS.length ? avgRating().toFixed(1) + " ★" : "–";
   }
 
-  // ---------- Categorieën ----------
-  function renderCategories() {
+  // ---------- Collecties ----------
+  function renderCollections() {
     $("#catGrid").innerHTML = CATEGORIES.map((c) => {
-      const first = PRODUCTS.find((p) => p.category === c.id);
-      const count = PRODUCTS.filter((p) => p.category === c.id).length;
-      return `<button class="cat-card" data-cat="${c.id}">
-        <div class="cat-img">${pgMockup(first.type, first.colors[0])}</div>
-        <div class="cat-body"><h3>${c.name}</h3><p>${c.desc}</p><span>${count} producten →</span></div>
+      const items = PRODUCTS.filter((p) => p.c === c);
+      if (!items.length) return "";
+      return `<button class="cat-card" data-cat="${c}">
+        <div class="cat-img">${img(items[0].img[0], "570xN", t("cat_" + c))}</div>
+        <div class="cat-body"><h3>${esc(t("cat_" + c))}</h3><span>${esc(t("results", { n: items.length }))} →</span></div>
       </button>`;
     }).join("");
-    $$(".cat-card").forEach((el) =>
-      el.addEventListener("click", () => {
-        state.category = el.dataset.cat;
-        renderFilters();
-        renderProducts();
-        $("#shop").scrollIntoView({ behavior: "smooth" });
-      })
-    );
+    $$(".cat-card").forEach((el) => el.addEventListener("click", () => {
+      state.category = el.dataset.cat;
+      state.theme = null;
+      resetAndRender();
+      $("#shop").scrollIntoView({ behavior: "smooth" });
+    }));
+
+    $("#themeRow").innerHTML = THEMES.map((th) => {
+      const n = PRODUCTS.filter((p) => p.th.includes(th)).length;
+      return n ? `<button class="theme-chip" data-theme="${th}">${esc(t("th_" + th))} <small>${n}</small></button>` : "";
+    }).join("");
+    $$(".theme-chip").forEach((el) => el.addEventListener("click", () => {
+      state.theme = el.dataset.theme;
+      state.category = "all";
+      resetAndRender();
+      $("#shop").scrollIntoView({ behavior: "smooth" });
+    }));
   }
 
-  // ---------- Productoverzicht ----------
-  const state = { category: "all", search: "", sort: "popular" };
+  // ---------- Shop ----------
+  const state = { category: "all", theme: null, search: "", sort: "featured", shown: CFG.pageSize };
+
+  function filtered() {
+    const words = state.search.toLowerCase().split(/\s+/).filter(Boolean);
+    let list = PRODUCTS.filter((p) => {
+      if (state.category !== "all" && p.c !== state.category) return false;
+      if (state.theme && !p.th.includes(state.theme)) return false;
+      const hay = p.t.toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+    if (state.sort === "price-asc") list = [...list].sort((a, b) => a.p - b.p);
+    if (state.sort === "price-desc") list = [...list].sort((a, b) => b.p - a.p);
+    if (state.sort === "name") list = [...list].sort((a, b) => a.t.localeCompare(b.t, lang));
+    return list;
+  }
 
   function renderFilters() {
-    const all = [{ id: "all", name: "Alles" }, ...CATEGORIES];
-    $("#filters").innerHTML = all
-      .map((c) => `<button role="tab" class="chip ${state.category === c.id ? "active" : ""}" data-cat="${c.id}" aria-selected="${state.category === c.id}">${c.name}</button>`)
+    const cats = ["all", ...CATEGORIES.filter((c) => PRODUCTS.some((p) => p.c === c))];
+    $("#filters").innerHTML = cats
+      .map((c) => `<button class="chip ${state.category === c ? "active" : ""}" data-cat="${c}" aria-pressed="${state.category === c}">${esc(c === "all" ? t("all") : t("cat_" + c))}</button>`)
       .join("");
-    $$("#filters .chip").forEach((el) =>
-      el.addEventListener("click", () => {
-        state.category = el.dataset.cat;
-        renderFilters();
-        renderProducts();
-      })
-    );
+    $$("#filters .chip").forEach((el) => el.addEventListener("click", () => {
+      state.category = el.dataset.cat;
+      resetAndRender();
+    }));
+    const at = $("#activeTheme");
+    at.hidden = !state.theme;
+    if (state.theme) {
+      at.innerHTML = `<button class="theme-chip active" id="clearTheme">${esc(t("th_" + state.theme))} ✕</button>`;
+      $("#clearTheme").addEventListener("click", () => { state.theme = null; resetAndRender(); });
+    }
   }
 
   function renderProducts() {
-    let list = PRODUCTS.filter(
-      (p) =>
-        (state.category === "all" || p.category === state.category) &&
-        p.name.toLowerCase().includes(state.search.toLowerCase())
-    );
-    if (state.sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (state.sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
-    if (state.sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "nl"));
-
+    if (!PRODUCTS.length) {
+      $("#emptyState").hidden = false;
+      $("#emptyState").textContent = t("noCatalog");
+      $("#resultCount").textContent = "";
+      return;
+    }
+    const list = filtered();
+    $("#resultCount").textContent = t("results", { n: list.length });
     $("#emptyState").hidden = list.length > 0;
-    $("#productGrid").innerHTML = list
-      .map(
-        (p) => `<article class="product-card" data-id="${p.id}" tabindex="0">
-          <div class="product-img">${p.badge ? `<span class="badge">${p.badge}</span>` : ""}${pgMockup(p.type, p.colors[0])}</div>
-          <div class="product-body">
-            <h3>${p.name}</h3>
-            <div class="dots">${p.colors.slice(0, 6).map((c) => `<span style="background:${c}"></span>`).join("")}</div>
-            <div class="product-foot"><span class="price">vanaf ${euro(p.price)}</span><span class="design-link">Ontwerp →</span></div>
-          </div>
-        </article>`
-      )
-      .join("");
-    $$(".product-card").forEach((el) => {
-      el.addEventListener("click", () => openProduct(el.dataset.id));
-      el.addEventListener("keydown", (e) => { if (e.key === "Enter") openProduct(el.dataset.id); });
-    });
+    $("#emptyState").textContent = t("noResults");
+    $("#productGrid").innerHTML = list.slice(0, state.shown).map((p) => `
+      <article class="product-card" data-id="${p.id}" tabindex="0">
+        <div class="product-img">${img(p.img[0], "570xN", p.t)}</div>
+        <div class="product-body">
+          <h3>${esc(p.t)}</h3>
+          <div class="product-foot"><span class="price">${t("from")} ${money(p.p)}</span><span class="design-link">${esc(t("view"))} →</span></div>
+        </div>
+      </article>`).join("");
+    $("#loadMore").hidden = list.length <= state.shown;
   }
 
-  // ---------- Configurator ----------
-  const cfg = { product: null, color: null, size: null, design: {}, tab: "upload" };
+  function resetAndRender() {
+    state.shown = CFG.pageSize;
+    renderFilters();
+    renderProducts();
+  }
+
+  // ---------- Productdetail ----------
+  let current = null;
+  let photo = 0;
+
+  function optionBlock(label, values) {
+    if (!values || !values.length) return "";
+    const max = 14;
+    const chips = values.slice(0, max).map((v) => `<span class="opt">${esc(v)}</span>`).join("");
+    const more = values.length > max ? `<span class="opt more">${esc(t("moreOptions", { n: values.length - max }))}</span>` : "";
+    return `<div class="field"><label>${esc(label)}</label><div class="opts">${chips}${more}</div></div>`;
+  }
+
+  function optLabel(name, fallbackKey) {
+    const n = (name || "").toLowerCase();
+    if (n === "size") return t("sizes");
+    if (n === "color" || n === "colour") return t("colors");
+    return name || t(fallbackKey);
+  }
+
+  function showPhoto(i) {
+    photo = (i + current.img.length) % current.img.length;
+    const el = $("#pmImage");
+    el.dataset.full = current.img[photo];
+    el.src = sized(current.img[photo], "794xN");
+    el.alt = current.t;
+    $$("#pmThumbs button").forEach((b, idx) => b.classList.toggle("active", idx === photo));
+  }
 
   function openProduct(id) {
     const p = byId(id);
-    cfg.product = p;
-    cfg.color = p.colors[0];
-    cfg.size = p.sizes[0];
-    cfg.design = {};
-    cfg.tab = "upload";
-    cfg.textColorTouched = false;
-
-    $("#pmTitle").textContent = p.name;
-    $("#pmDesc").textContent = p.desc;
-    $("#pmColors").innerHTML = p.colors
-      .map((c, i) => `<button type="button" class="swatch ${i === 0 ? "active" : ""}" style="background:${c}" data-color="${c}" aria-label="Kleur ${c}"></button>`)
-      .join("");
-    $$("#pmColors .swatch").forEach((el) =>
-      el.addEventListener("click", () => {
-        cfg.color = el.dataset.color;
-        $$("#pmColors .swatch").forEach((s) => s.classList.toggle("active", s === el));
-        updatePreview();
-      })
-    );
-    $("#pmSize").innerHTML = p.sizes
-      .map((s) => {
-        const extra = p.sizePrices && p.sizePrices[s] ? ` (+${euro(p.sizePrices[s])})` : "";
-        return `<option value="${s}">${s}${extra}</option>`;
-      })
-      .join("");
-    $("#pmText").value = "";
-    $("#pmUpload").value = "";
-    $("#pmUploadLabel").textContent = "Klik om een PNG, JPG of SVG te kiezen";
-    $("#pmQty").value = 1;
-    setTab("upload");
-    updatePreview();
-    openModal("#productModal");
+    if (!p) return;
+    current = p;
+    $("#pmTitle").textContent = p.t;
+    $("#pmPrice").textContent = `${t("from")} ${money(p.p)}`;
+    $("#pmOptions").innerHTML = optionBlock(optLabel(p.sn, "options"), p.s) + optionBlock(optLabel(p.cn, "options"), p.co);
+    $("#pmDesc").innerHTML = p.d.split(/\n{2,}/).map((para) => `<p>${esc(para).replace(/\n/g, "<br>")}</p>`).join("");
+    $("#descNote").hidden = lang === "en";
+    $("#pmBuy").href = etsyUrl(p);
+    $("#pmThumbs").innerHTML = p.img.map((u, i) => `<button type="button" data-i="${i}" aria-label="${i + 1}">${img(u, "170x135", "")}</button>`).join("");
+    $$("#pmThumbs button").forEach((b) => b.addEventListener("click", () => showPhoto(+b.dataset.i)));
+    $("#galPrev").hidden = $("#galNext").hidden = p.img.length < 2;
+    showPhoto(0);
+    $("#productModal").hidden = false;
+    document.body.classList.add("locked");
+    history.replaceState(null, "", "#p=" + p.id);
   }
 
-  function currentDesign() {
-    if (cfg.tab === "upload" && cfg.design.img) return { img: cfg.design.img };
-    if (cfg.tab === "text" && cfg.design.text) return { text: cfg.design.text, font: cfg.design.font, textColor: cfg.design.textColor };
-    return null;
+  function closeProduct() {
+    $("#productModal").hidden = true;
+    document.body.classList.remove("locked");
+    if (location.hash.startsWith("#p=")) history.replaceState(null, "", location.pathname + location.search);
   }
 
-  function updatePreview() {
-    const p = cfg.product;
-    $("#pmPreview").innerHTML = pgMockup(p.type, cfg.color, currentDesign());
-    const qty = Math.max(1, parseInt($("#pmQty").value, 10) || 1);
-    $("#pmPrice").textContent = euro(unitPrice(p, cfg.size) * qty) + (qty > 1 ? ` (${qty} × ${euro(unitPrice(p, cfg.size))})` : "");
+  // ---------- Reviews ----------
+  let reviewsOpen = false;
+  const stars = (n) => "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n);
+
+  function renderReviews() {
+    const section = $("#reviews");
+    if (!REVIEWS.length) { section.hidden = true; $$('a[href="#reviews"]').forEach((a) => (a.hidden = true)); return; }
+    const avg = avgRating();
+    $("#avgStars").textContent = stars(Math.round(avg));
+    $("#reviewsSummary").textContent = t("reviewsText", { avg: avg.toFixed(1), n: REVIEWS.length });
+    const list = reviewsOpen ? REVIEWS : REVIEWS.slice(0, 6);
+    $("#reviewGrid").innerHTML = list.map((r) => {
+      const [m, d, y] = r.dt.split("/");
+      const date = y ? new Date(+y, +m - 1, +d).toLocaleDateString(lang, { year: "numeric", month: "short" }) : "";
+      return `<figure class="review">
+        <div class="stars" aria-label="${r.r}/5">${stars(r.r)}</div>
+        <blockquote>${esc(r.m).replace(/\n+/g, "<br>")}</blockquote>
+        <figcaption><strong>${esc(r.n)}</strong><span>${esc(date)} · Etsy</span></figcaption>
+      </figure>`;
+    }).join("");
+    const btn = $("#reviewsToggle");
+    btn.hidden = REVIEWS.length <= 6;
+    btn.textContent = reviewsOpen ? t("reviewsLess") : t("reviewsMore");
   }
 
-  function setTab(tab) {
-    cfg.tab = tab;
-    $$(".design-tabs .tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
-    $$(".tab-panel").forEach((panel) => (panel.hidden = panel.dataset.panel !== tab));
-    updatePreview();
-  }
+  // ---------- Koppelingen ----------
+  function bind() {
+    $$(".etsy-link").forEach((a) => (a.href = SHOP_URL));
+    $$(".etsy-contact").forEach((a) => (a.href = SHOP_URL + "#about"));
 
-  // Verklein uploads zodat de winkelwagen in localStorage past
-  function readImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        if (file.type === "image/svg+xml") return resolve(reader.result);
-        const img = new Image();
-        img.onerror = reject;
-        img.onload = () => {
-          const max = 800;
-          const scale = Math.min(1, max / Math.max(img.width, img.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/png"));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    const langs = CFG.languages.filter((l) => I18N[l]);
+    $$(".lang-select").forEach((sel) => {
+      sel.innerHTML = langs.map((l) => `<option value="${l}">${esc(I18N[l].langName)}</option>`).join("");
+      sel.addEventListener("change", (e) => setLang(e.target.value));
     });
-  }
 
-  function bindConfigurator() {
-    $$(".design-tabs .tab").forEach((t) => t.addEventListener("click", () => setTab(t.dataset.tab)));
-    $("#pmSize").addEventListener("change", (e) => { cfg.size = e.target.value; updatePreview(); });
-    $("#pmUpload").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (file.size > 20 * 1024 * 1024) return toast("Bestand is te groot (max. 20 MB).");
-      try {
-        cfg.design.img = await readImage(file);
-        $("#pmUploadLabel").textContent = "✔ " + file.name;
-        updatePreview();
-      } catch (err) {
-        toast("Kon deze afbeelding niet lezen.");
-      }
+    $("#search").addEventListener("input", (e) => { state.search = e.target.value; state.shown = CFG.pageSize; renderProducts(); });
+    $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; state.shown = CFG.pageSize; renderProducts(); });
+    $("#loadMore").addEventListener("click", () => { state.shown += CFG.pageSize; renderProducts(); });
+    $("#productGrid").addEventListener("click", (e) => {
+      const card = e.target.closest(".product-card");
+      if (card) openProduct(card.dataset.id);
     });
-    const syncText = () => {
-      cfg.design.text = $("#pmText").value.trim();
-      cfg.design.font = $("#pmFont").value;
-      cfg.design.textColor = cfg.textColorTouched ? $("#pmTextColor").value : undefined;
-      updatePreview();
-    };
-    ["#pmText", "#pmFont"].forEach((s) => $(s).addEventListener("input", syncText));
-    $("#pmTextColor").addEventListener("input", () => { cfg.textColorTouched = true; syncText(); });
-    $("#pmQty").addEventListener("input", updatePreview);
-    $("#qtyMinus").addEventListener("click", () => { $("#pmQty").value = Math.max(1, ($("#pmQty").value | 0) - 1); updatePreview(); });
-    $("#qtyPlus").addEventListener("click", () => { $("#pmQty").value = Math.min(999, ($("#pmQty").value | 0) + 1); updatePreview(); });
-
-    $("#pmAdd").addEventListener("click", () => {
-      const design = currentDesign();
-      if (!design) {
-        toast("Voeg eerst een afbeelding of tekst toe.");
-        return;
-      }
-      const qty = Math.max(1, Math.min(999, parseInt($("#pmQty").value, 10) || 1));
-      cart.push({
-        key: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-        id: cfg.product.id,
-        color: cfg.color,
-        size: cfg.size,
-        qty,
-        design,
-      });
-      saveCart();
-      renderCart();
-      closeModal("#productModal");
-      openCart();
-      toast(`${cfg.product.name} toegevoegd aan je winkelwagen`);
+    $("#productGrid").addEventListener("keydown", (e) => {
+      const card = e.target.closest(".product-card");
+      if (card && e.key === "Enter") openProduct(card.dataset.id);
     });
-  }
+    $("#reviewsToggle").addEventListener("click", () => { reviewsOpen = !reviewsOpen; renderReviews(); });
 
-  // ---------- Winkelwagen ----------
-  function totals() {
-    const subtotal = cart.reduce((sum, item) => {
-      const p = byId(item.id);
-      return p ? sum + unitPrice(p, item.size) * item.qty : sum;
-    }, 0);
-    const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING ? 0 : SHIPPING_COST;
-    return { subtotal, shipping, total: subtotal + shipping };
-  }
-
-  function renderCart() {
-    cart = cart.filter((item) => byId(item.id));
-    const count = cart.reduce((n, i) => n + i.qty, 0);
-    $("#cartCount").textContent = count;
-    $("#cartCount").classList.toggle("visible", count > 0);
-
-    const { subtotal, shipping, total } = totals();
-    $("#cartSubtotal").textContent = euro(subtotal);
-    $("#cartShipping").textContent = shipping ? euro(shipping) : "Gratis";
-    $("#cartTotal").textContent = euro(total);
-    const remaining = FREE_SHIPPING - subtotal;
-    $("#shipText").textContent = remaining > 0 ? `Nog ${euro(remaining)} tot gratis verzending` : "🎉 Je bestelling wordt gratis verzonden!";
-    $("#shipFill").style.width = Math.min(100, (subtotal / FREE_SHIPPING) * 100) + "%";
-    $("#checkoutBtn").disabled = cart.length === 0;
-
-    if (!cart.length) {
-      $("#cartItems").innerHTML = `<div class="cart-empty"><p>Je winkelwagen is nog leeg.</p><a href="#shop" class="btn btn-ghost" data-close-cart>Bekijk producten</a></div>`;
-    } else {
-      $("#cartItems").innerHTML = cart
-        .map((item) => {
-          const p = byId(item.id);
-          return `<div class="cart-item" data-key="${item.key}">
-            <div class="ci-img">${pgMockup(p.type, item.color, item.design)}</div>
-            <div class="ci-body">
-              <strong>${p.name}</strong>
-              <span class="ci-meta"><i style="background:${item.color}"></i>${item.size}</span>
-              <div class="ci-actions">
-                <div class="qty small">
-                  <button type="button" data-act="dec" aria-label="Minder">−</button>
-                  <span>${item.qty}</span>
-                  <button type="button" data-act="inc" aria-label="Meer">+</button>
-                </div>
-                <button type="button" class="link" data-act="del">Verwijder</button>
-              </div>
-            </div>
-            <span class="ci-price">${euro(unitPrice(p, item.size) * item.qty)}</span>
-          </div>`;
-        })
-        .join("");
-    }
-    $$("[data-close-cart]", $("#cartItems")).forEach((el) => el.addEventListener("click", closeCart));
-  }
-
-  function bindCart() {
-    $("#cartBtn").addEventListener("click", openCart);
-    $$("[data-close-cart]").forEach((el) => el.addEventListener("click", closeCart));
-    $("#cartItems").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-act]");
-      if (!btn) return;
-      const key = btn.closest(".cart-item").dataset.key;
-      const item = cart.find((i) => i.key === key);
-      if (btn.dataset.act === "inc") item.qty = Math.min(999, item.qty + 1);
-      if (btn.dataset.act === "dec") item.qty = Math.max(1, item.qty - 1);
-      if (btn.dataset.act === "del") cart = cart.filter((i) => i.key !== key);
-      saveCart();
-      renderCart();
-    });
-    $("#checkoutBtn").addEventListener("click", () => {
-      closeCart();
-      $("#coTotal").textContent = euro(totals().total);
-      openModal("#checkoutModal");
-    });
-    $("#checkoutForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      cart = [];
-      saveCart();
-      renderCart();
-      e.target.reset();
-      closeModal("#checkoutModal");
-      toast("Bedankt voor je bestelling! (demo)");
-    });
-  }
-
-  function openCart() { $("#cartDrawer").hidden = false; document.body.classList.add("locked"); }
-  function closeCart() { $("#cartDrawer").hidden = true; document.body.classList.remove("locked"); }
-
-  // ---------- Modals ----------
-  function openModal(sel) { $(sel).hidden = false; document.body.classList.add("locked"); }
-  function closeModal(sel) { $(sel).hidden = true; document.body.classList.remove("locked"); }
-
-  function bindModals() {
-    $$(".modal").forEach((m) => $$("[data-close]", m).forEach((el) => el.addEventListener("click", () => closeModal("#" + m.id))));
+    $$("#productModal [data-close]").forEach((el) => el.addEventListener("click", closeProduct));
+    $("#galPrev").addEventListener("click", () => showPhoto(photo - 1));
+    $("#galNext").addEventListener("click", () => showPhoto(photo + 1));
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      $$(".modal").forEach((m) => { if (!m.hidden) closeModal("#" + m.id); });
-      if (!$("#cartDrawer").hidden) closeCart();
+      if ($("#productModal").hidden) return;
+      if (e.key === "Escape") closeProduct();
+      if (e.key === "ArrowLeft") showPhoto(photo - 1);
+      if (e.key === "ArrowRight") showPhoto(photo + 1);
     });
-  }
 
-  // ---------- Overig ----------
-  function bindMisc() {
-    $("#search").addEventListener("input", (e) => { state.search = e.target.value; renderProducts(); });
-    $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; renderProducts(); });
     $("#menuBtn").addEventListener("click", () => {
       const open = $("#nav").classList.toggle("open");
       $("#menuBtn").setAttribute("aria-expanded", open);
     });
     $$("#nav a").forEach((a) => a.addEventListener("click", () => $("#nav").classList.remove("open")));
-    $("#newsletterForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      e.target.reset();
-      toast("Bedankt! Je kortingscode is onderweg.");
-    });
     $("#year").textContent = new Date().getFullYear();
   }
 
-  renderHero();
-  renderCategories();
-  renderFilters();
-  renderProducts();
-  renderCart();
-  bindConfigurator();
-  bindCart();
-  bindModals();
-  bindMisc();
+  function renderAll() {
+    applyTranslations();
+    renderHero();
+    renderCollections();
+    renderFilters();
+    renderProducts();
+    renderReviews();
+    if (current && !$("#productModal").hidden) openProduct(current.id);
+  }
+
+  bind();
+  renderAll();
+  const deep = location.hash.match(/^#p=(.+)$/);
+  if (deep) openProduct(decodeURIComponent(deep[1]));
 })();
