@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Radio Maroc</title>
+  <meta name="description" content="Luister live naar Marokkaanse radiozenders.">
+  <meta name="theme-color" content="#0b1f17">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="36" height="36">
+      <div>
+        <h1>Radio Maroc</h1>
+        <p class="subtitle">راديو المغرب · Live Marokkaanse zenders</p>
+      </div>
+    </div>
+    <button id="themeToggle" class="icon-btn" aria-label="Wissel thema" title="Wissel thema">◐</button>
+  </header>
+
+  <main>
+    <section class="controls">
+      <input id="search" type="search" placeholder="Zoek zender, stad of genre…" autocomplete="off" aria-label="Zoek zender">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-view="all" role="tab" aria-selected="true">Alle</button>
+        <button class="tab" data-view="featured" role="tab" aria-selected="false">Populair</button>
+        <button class="tab" data-view="favorites" role="tab" aria-selected="false">★ Favorieten</button>
+        <button class="tab" data-view="recent" role="tab" aria-selected="false">Recent</button>
+      </nav>
+      <div id="genres" class="chips" aria-label="Filter op genre"></div>
+    </section>
+
+    <p id="status" class="status" role="status">Zenders laden…</p>
+    <ul id="stations" class="grid" aria-live="polite"></ul>
+  </main>
+
+  <footer id="player" class="player" hidden>
+    <img id="npLogo" class="np-logo" alt="" width="52" height="52">
+    <div class="np-info">
+      <strong id="npName">—</strong>
+      <span id="npMeta" class="np-meta"></span>
+    </div>
+    <div class="np-controls">
+      <button id="prevBtn" class="icon-btn" aria-label="Vorige zender">⏮</button>
+      <button id="playBtn" class="play-btn" aria-label="Afspelen">▶</button>
+      <button id="nextBtn" class="icon-btn" aria-label="Volgende zender">⏭</button>
+      <button id="favBtn" class="icon-btn" aria-label="Favoriet">☆</button>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume">
+    </div>
+  </footer>
+
+  <audio id="audio" preload="none"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
